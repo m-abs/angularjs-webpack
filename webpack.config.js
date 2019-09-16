@@ -1,28 +1,33 @@
 'use strict';
 
 // Modules
-var webpack = require('webpack');
-var autoprefixer = require('autoprefixer');
-var HtmlWebpackPlugin = require('html-webpack-plugin');
-const MiniCssExtractPlugin = require('mini-css-extract-plugin');
-var CopyWebpackPlugin = require('copy-webpack-plugin');
-var {CleanWebpackPlugin} = require('clean-webpack-plugin');
+const webpack = require('webpack');
+const autoprefixer = require('autoprefixer');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 /**
  * Env
  * Get npm lifecycle event to identify the environment
  */
-var ENV = process.env.npm_lifecycle_event;
-var isTest = ENV === 'test' || ENV === 'test-watch';
-var isProd = ENV === 'build';
+const ENV = process.env.npm_lifecycle_event;
+const isTest = ENV === 'test' || ENV === 'test-watch';
+const isProd = ENV === 'build';
+
 
 module.exports = function makeWebpackConfig() {
-  /**
-   * Config
-   * Reference: http://webpack.github.io/docs/configuration.html
-   * This is the object where all configuration gets set
-   */
-  var config = {};
+
+    /**
+    * Config
+    * Reference: http://webpack.github.io/docs/configuration.html
+    * This is the object where all configuration gets set
+    */
+    let config = {
+      optimization: {minimize: isProd},
+    };
+
+    config.mode = isProd? 'production': 'development';
 
   /**
    * Entry
@@ -78,10 +83,9 @@ module.exports = function makeWebpackConfig() {
    * List: http://webpack.github.io/docs/list-of-loaders.html
    * This handles most of the magic responsible for converting modules
    */
-
-  // Initialize module
   config.module = {
     rules: [{
+
       // JS LOADER
       // Reference: https://github.com/babel/babel-loader
       // Transpile .js files using babel-loader
@@ -97,17 +101,17 @@ module.exports = function makeWebpackConfig() {
       // Reference: https://github.com/postcss/postcss-loader
       // Postprocess your css with PostCSS plugins
       test: /\.css$/,
+
       // Reference: https://github.com/webpack/extract-text-webpack-plugin
       // Extract css files in production builds
       //
       // Reference: https://github.com/webpack/style-loader
       // Use style-loader in development.
-
       use: [
-        isTest ? 'null-loader' : MiniCssExtractPlugin.loader,
-        {loader: 'css-loader', query: {sourceMap: true}},
-        {loader: 'postcss-loader'}
-      ],
+          !isProd ? 'style-loader' : MiniCssExtractPlugin.loader,
+          'css-loader',
+          'postcss-loader'
+      ]
     }, {
       // ASSET LOADER
       // Reference: https://github.com/webpack/file-loader
@@ -159,7 +163,6 @@ module.exports = function makeWebpackConfig() {
    * List: http://webpack.github.io/docs/list-of-plugins.html
    */
   config.plugins = [
-    new CleanWebpackPlugin(),
     new webpack.LoaderOptionsPlugin({
       test: /\.scss$/i,
       options: {
@@ -167,7 +170,7 @@ module.exports = function makeWebpackConfig() {
           plugins: [autoprefixer]
         }
       }
-    }),
+        })
   ];
 
   // Skip rendering index.html in test mode
@@ -183,38 +186,37 @@ module.exports = function makeWebpackConfig() {
       // Reference: https://github.com/webpack/extract-text-webpack-plugin
       // Extract css files
       // Disabled when in test mode or not in build mode
-      new MiniCssExtractPlugin({filename: 'css/[name].css', disable: !isProd, allChunks: true})
+            new MiniCssExtractPlugin({
+                filename: 'css/[name].css',
+                disable: !isProd, allChunks: true
+            })
     )
   }
 
-  // Add build specific plugins
-  if (isProd) {
-    config.plugins.push(
-      // Reference: http://webpack.github.io/docs/list-of-plugins.html#noerrorsplugin
-      // Only emit files when there are no errors
-      new webpack.NoErrorsPlugin(),
+    // Add build specific plugins
+    if (isProd) {
+        config.plugins.push(
+            // Reference: http://webpack.github.io/docs/list-of-plugins.html#noerrorsplugin
+            // Only emit files when there are no errors
+            new webpack.NoEmitOnErrorsPlugin(),
 
-      // Reference: http://webpack.github.io/docs/list-of-plugins.html#uglifyjsplugin
-      // Minify all javascript, switch loaders to minimizing mode
-      new webpack.optimize.UglifyJsPlugin(),
+            // Copy assets from the public folder
+            // Reference: https://github.com/kevlened/copy-webpack-plugin
+            new CopyWebpackPlugin([{
+                from: __dirname + '/src/public'
+            }])
+        )
+    }
 
-      // Copy assets from the public folder
-      // Reference: https://github.com/kevlened/copy-webpack-plugin
-      new CopyWebpackPlugin([{
-        from: __dirname + '/src/public'
-      }])
-    )
-  }
-
-  /**
-   * Dev server configuration
-   * Reference: http://webpack.github.io/docs/configuration.html#devserver
-   * Reference: http://webpack.github.io/docs/webpack-dev-server.html
-   */
-  config.devServer = {
-    contentBase: './src/public',
-    stats: 'minimal',
-    host: '0.0.0.0'
+    /**
+    * Dev server configuration
+    * Reference: http://webpack.github.io/docs/configuration.html#devserver
+    * Reference: http://webpack.github.io/docs/webpack-dev-server.html
+    */
+    config.devServer = {
+        contentBase: './src/public',
+        stats: 'minimal',
+        host: '127.0.0.1'
   };
 
   return config;
