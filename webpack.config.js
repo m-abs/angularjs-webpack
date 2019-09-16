@@ -4,9 +4,9 @@
 var webpack = require('webpack');
 var autoprefixer = require('autoprefixer');
 var HtmlWebpackPlugin = require('html-webpack-plugin');
-var ExtractTextPlugin = require('extract-text-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 var CopyWebpackPlugin = require('copy-webpack-plugin');
-var CleanWebpackPlugin = require('clean-webpack-plugin');
+var {CleanWebpackPlugin} = require('clean-webpack-plugin');
 
 /**
  * Env
@@ -103,13 +103,11 @@ module.exports = function makeWebpackConfig() {
       // Reference: https://github.com/webpack/style-loader
       // Use style-loader in development.
 
-      loader: isTest ? 'null-loader' : ExtractTextPlugin.extract({
-        fallbackLoader: 'style-loader',
-        loader: [
-          {loader: 'css-loader', query: {sourceMap: true}},
-          {loader: 'postcss-loader'}
-        ],
-      })
+      use: [
+        isTest ? 'null-loader' : MiniCssExtractPlugin.loader,
+        {loader: 'css-loader', query: {sourceMap: true}},
+        {loader: 'postcss-loader'}
+      ],
     }, {
       // ASSET LOADER
       // Reference: https://github.com/webpack/file-loader
@@ -169,7 +167,7 @@ module.exports = function makeWebpackConfig() {
           plugins: [autoprefixer]
         }
       }
-    })
+    }),
   ];
 
   // Skip rendering index.html in test mode
@@ -185,7 +183,7 @@ module.exports = function makeWebpackConfig() {
       // Reference: https://github.com/webpack/extract-text-webpack-plugin
       // Extract css files
       // Disabled when in test mode or not in build mode
-      new ExtractTextPlugin({filename: 'css/[name].css', disable: !isProd, allChunks: true})
+      new MiniCssExtractPlugin({filename: 'css/[name].css', disable: !isProd, allChunks: true})
     )
   }
 
